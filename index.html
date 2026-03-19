@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Takaaaa Spin Wheel · Simple & clean</title>
+    <title>Takaaaa Spin Wheel · 6 sec slow slowdown</title>
     <style>
         * {
             box-sizing: border-box;
@@ -207,7 +207,6 @@
 
 <script>
     (function() {
-        // Simple values with tk only
         const values = [
             "0 tk", "1 tk", "100 tk", "1000 tk", "20 tk", "50 tk", "2 tk", "10000 tk", "300 tk", "200 tk",
             "400 tk", "500 tk", "600 tk", "700 tk", "800 tk", "900 tk", "1500 tk", "30 tk", "40 tk", "10 tk",
@@ -229,8 +228,8 @@
         let currentRotation = 0;
         let spinAnimation = null;
         let isSpinning = false;
-        const spinDuration = 6000;
-        const fullRotations = 14;
+        const spinDuration = 6000; // 6 seconds total
+        const fullRotations = 14;   // More rotations for longer spin
 
         function resizeCanvas() {
             const w = wrapper.clientWidth;
@@ -249,8 +248,9 @@
             const centerY = height / 2;
             const radius = Math.min(width, height) * 0.42;
             
-            // Simple text position - middle of the lane
-            const textRadius = radius * 0.55; // Perfect middle between center and rim
+            // Text boundaries
+            const textStartRadius = radius * 0.75;
+            const textEndRadius = radius * 0.3;
             
             ctx.clearRect(0, 0, width, height);
 
@@ -282,7 +282,22 @@
             ctx.lineWidth = Math.max(3, width * 0.008);
             ctx.stroke();
 
-            // Draw text - simple and clean
+            // Text boundary lines
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, textStartRadius, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#666666';
+            ctx.lineWidth = Math.max(1.5, width * 0.003);
+            ctx.setLineDash([5, 3]);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, textEndRadius, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#666666';
+            ctx.lineWidth = Math.max(1.5, width * 0.003);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw text
             for (let i = 0; i < segmentCount; i++) {
                 const startAngle = i * anglePerSegment + rotation;
                 
@@ -291,18 +306,16 @@
                 
                 const midAngle = startAngle + anglePerSegment / 2;
                 
-                // Position text in the middle
-                const x = Math.cos(midAngle) * textRadius;
-                const y = Math.sin(midAngle) * textRadius;
+                const startX = Math.cos(midAngle) * textStartRadius;
+                const startY = Math.sin(midAngle) * textStartRadius;
                 
-                ctx.translate(x, y);
-                ctx.rotate(midAngle + Math.PI/2); // Make text readable
+                ctx.translate(startX, startY);
+                ctx.rotate(midAngle);
                 
-                ctx.textAlign = 'center';
+                ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
                 
-                // Simple fixed font size
-                ctx.font = `bold ${Math.max(14, width * 0.035)}px 'Segoe UI', 'Arial', sans-serif`;
+                ctx.font = `bold ${Math.max(16, width * 0.04)}px 'Segoe UI', 'Arial', sans-serif`;
                 ctx.fillStyle = '#000000';
                 ctx.shadowColor = 'rgba(0,0,0,0.1)';
                 ctx.shadowBlur = 2;
@@ -327,6 +340,13 @@
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 4;
             ctx.stroke();
+            
+            // Inner white ring
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, textEndRadius - 2, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            ctx.stroke();
         }
 
         function getCurrentSegmentIndex(rotation) {
@@ -345,6 +365,7 @@
             const startRotation = currentRotation;
             const startTime = performance.now();
             
+            // Random ending position (full rotations + random offset)
             const randomLandingOffset = Math.random() * 2 * Math.PI;
             const targetRotation = startRotation + (fullRotations * 2 * Math.PI) + randomLandingOffset;
 
@@ -352,8 +373,15 @@
                 const elapsed = currentTime - startTime;
                 let progress = Math.min(elapsed / spinDuration, 1);
                 
-                // Simple ease-out for smooth stop
-                const easeOutProgress = 1 - Math.pow(1 - progress, 3);
+                // EXPONENTIAL EASE-OUT: starts fast, ends very slow
+                // This creates that "slowly slowly stopping" feeling
+                let easeOutProgress;
+                if (progress === 0) {
+                    easeOutProgress = 0;
+                } else {
+                    // Exponential ease-out - extremely smooth deceleration
+                    easeOutProgress = 1 - Math.pow(2, -10 * progress);
+                }
                 
                 currentRotation = startRotation + (targetRotation - startRotation) * easeOutProgress;
                 currentRotation = currentRotation % (2 * Math.PI);
@@ -363,9 +391,11 @@
                 if (progress < 1) {
                     spinAnimation = requestAnimationFrame(animateSmooth);
                 } else {
+                    // Ensure exact final position
                     currentRotation = targetRotation % (2 * Math.PI);
                     drawWheel(currentRotation);
                     
+                    // Small delay to show final position before popup
                     setTimeout(() => {
                         isSpinning = false;
                         spinBtn.style.opacity = '1';

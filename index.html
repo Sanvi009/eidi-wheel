@@ -208,9 +208,9 @@
 <script>
     (function() {
         const values = [
-            "0 taka", "1 taka", "100 taka", "1000 taka", "20 taka", "50 taka", "2 taka", "10000 taka", "300 taka", "200 taka",
-            "400 taka", "500 taka", "600 taka", "700 taka", "800 taka", "900 taka", "1500 taka", "30 taka", "40 taka", "10 taka",
-            "15 taka", "5 taka", "25 taka", "35 taka", "45 taka", "47 taka", "55 taka", "65 taka", "90 taka"
+            "0 tk", "1 tk", "100 tk", "1000 tk", "20 tk", "50 tk", "2 tk", "10000 tk", "300 tk", "200 tk",
+            "400 tk", "500 tk", "600 tk", "700 tk", "800 tk", "900 tk", "1500 tk", "30 tk", "40 tk", "10 tk",
+            "15 tk", "5 tk", "25 tk", "35 tk", "45 tk", "47 tk", "55 tk", "65 tk", "90 tk"
         ];
 
         const segmentCount = values.length;
@@ -321,8 +321,8 @@
                 ctx.shadowBlur = 2;
                 
                 let displayText = values[i];
-                if (displayText === "10000 taka") displayText = "10k taka";
-                else if (displayText === "1500 taka") displayText = "1.5k taka";
+                if (displayText === "10000 tk") displayText = "10k tk";
+                else if (displayText === "1500 tk") displayText = "1.5k tk";
                 
                 ctx.fillText(displayText, 0, 0);
                 
@@ -375,7 +375,6 @@
                 
                 // EXPONENTIAL EASE-OUT: starts fast, ends very slow
                 // This creates that "slowly slowly stopping" feeling
-                // Using easeOutExpo: progress == 0? 0 : 1 - pow(2, -10 * progress)
                 let easeOutProgress;
                 if (progress === 0) {
                     easeOutProgress = 0;
@@ -384,10 +383,6 @@
                     easeOutProgress = 1 - Math.pow(2, -10 * progress);
                 }
                 
-                // Alternative even smoother: easeOutQuart
-                // easeOutProgress = 1 - Math.pow(1 - progress, 4);
-                
-                // Using exponential for that perfect "slowly slowly" feel
                 currentRotation = startRotation + (targetRotation - startRotation) * easeOutProgress;
                 currentRotation = currentRotation % (2 * Math.PI);
                 
@@ -410,7 +405,7 @@
                         const winningValue = values[winnerIdx];
                         
                         let message;
-                        if (winningValue === "0 taka") {
+                        if (winningValue === "0 tk") {
                             message = "hehe bhuwaaa tmi salami paba naa 😂";
                             popupMessage.className = 'zero-highlight';
                         } else {

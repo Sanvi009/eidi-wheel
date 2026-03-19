@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Takaaaa Spin Wheel · Bhuri wala</title>
+    <title>Takaaaa Spin Wheel · Smooth as butter</title>
     <style>
         * {
             box-sizing: border-box;
@@ -40,7 +40,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
         }
 
         canvas {
@@ -52,12 +51,8 @@
             display: block;
             border-radius: 50%;
             box-shadow: 0 20px 35px rgba(0, 0, 0, 0.6), 0 0 0 8px #2e4b5c, 0 0 0 12px #f1c40f;
-            background: #2c3e50;
+            background: white;
             transition: box-shadow 0.2s;
-        }
-
-        canvas:active {
-            transform: scale(0.99);
         }
 
         .spin-button {
@@ -89,7 +84,6 @@
             box-shadow: 0 2px 0 #b38d1c, 0 8px 20px rgba(0,0,0,0.5);
         }
 
-        /* static pointer decoration */
         .pointer {
             position: absolute;
             top: -2px;
@@ -117,7 +111,6 @@
             align-items: center;
             justify-content: center;
             z-index: 100;
-            transition: 0.2s;
         }
 
         .popup-card {
@@ -128,8 +121,6 @@
             border-radius: 64px 24px 64px 24px;
             text-align: center;
             box-shadow: 0 35px 60px rgba(0,0,0,0.6), 0 0 0 6px #f1c40f, 0 0 0 12px #2e4b5c;
-            transform: scale(0.9);
-            transition: 0.2s;
             border: 2px solid white;
         }
 
@@ -144,11 +135,11 @@
         }
 
         .popup-card p {
-            font-size: 1.8rem;
-            font-weight: 700;
+            font-size: 2.2rem;
+            font-weight: 800;
             background: #2e4b5c;
             color: white;
-            padding: 1rem 0.8rem;
+            padding: 1.2rem 1rem;
             border-radius: 60px;
             margin: 20px 0 25px;
             border: 3px solid #f1c40f;
@@ -182,7 +173,6 @@
             text-transform: uppercase;
         }
 
-        /* footer text */
         .hint {
             color: #bcd4de;
             margin-top: 24px;
@@ -192,16 +182,14 @@
             padding: 10px 28px;
             border-radius: 60px;
             border: 2px solid #f1c40f80;
-            backdrop-filter: blur(5px);
         }
 
-        /* responsive small adjustments */
         @media (max-width: 500px) {
             .popup-card h2 {
                 font-size: 2rem;
             }
             .popup-card p {
-                font-size: 1.5rem;
+                font-size: 1.8rem;
             }
             .pointer {
                 border-left-width: 16px;
@@ -218,10 +206,9 @@
         <div class="spin-button" id="spinBtn" role="button" tabindex="0">SPIN</div>
         <div class="pointer"></div>
     </div>
-    <div class="hint">⚡ dabao aur kismat khelay ⚡</div>
+    <div class="hint">⚡ ghurai dekho kismat ⚡</div>
 </div>
 
-<!-- popup modal -->
 <div class="popup-overlay" id="popupOverlay">
     <div class="popup-card" id="popupCard">
         <h2>🎉 RESULT 🎉</h2>
@@ -232,24 +219,19 @@
 
 <script>
     (function() {
-        // ---------------- wheel options (taka values) ----------------
+        // ---------------- wheel options with "taka" ----------------
         const values = [
-            "0", "1", "100", "1000", "20", "50", "2", "10000", "300", "200",
-            "400", "500", "600", "700", "800", "900", "1500", "30", "40", "10",
-            "15", "5", "25", "35", "45", "47", "55", "65", "90"
-        ];  // total 29 segments
+            "0 taka", "1 taka", "100 taka", "1000 taka", "20 taka", "50 taka", "2 taka", "10000 taka", "300 taka", "200 taka",
+            "400 taka", "500 taka", "600 taka", "700 taka", "800 taka", "900 taka", "1500 taka", "30 taka", "40 taka", "10 taka",
+            "15 taka", "5 taka", "25 taka", "35 taka", "45 taka", "47 taka", "55 taka", "65 taka", "90 taka"
+        ];
 
         const segmentCount = values.length;
         const anglePerSegment = (Math.PI * 2) / segmentCount;
 
-        // colors: vibrant alternating (decent contrast)
-        const colorPalette = [
-            '#f8c291', '#6a89cc', '#f6b93b', '#b8e994', '#fa983a', '#60a3bc', '#e55039', '#78e08f', '#f6b93b', '#82ccdd',
-            '#fad0c4', '#f8c291', '#b8e994', '#6a89cc', '#e55039', '#f6b93b', '#60a3bc', '#fa983a', '#78e08f', '#82ccdd',
-            '#fad0c4', '#f8c291', '#b8e994', '#6a89cc', '#e55039', '#f6b93b', '#fa983a', '#60a3bc', '#e55039'
-        ]; // enough colors even if more segments
+        // All segments white with subtle grey separator (clean look)
+        const segmentColor = '#FFFFFF';  // pure white for all segments
 
-        // canvas references
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
         const wrapper = document.getElementById('wheelWrapper');
@@ -259,15 +241,12 @@
         const closePopup = document.getElementById('closePopup');
 
         // ---- state ----
-        let currentRotation = 0;        // radians
+        let currentRotation = 0;
         let spinAnimation = null;
         let isSpinning = false;
-        let spinVelocity = 0;
-        const friction = 0.985;          // smooth deceleration
-        const minVelocity = 0.02;         // stop threshold
-
-        // ---- winner segment index (landing) ----
-        let landedIndex = 0;
+        let spinStartTime = 0;
+        const spinDuration = 4000; // 4 seconds total spin - perfect!
+        const fullRotations = 12;   // number of full spins before stopping
 
         // ---- resize handling ----
         function resizeCanvas() {
@@ -279,7 +258,7 @@
             drawWheel(currentRotation);
         }
 
-        // ----- draw wheel (with text pointing to centre) -----
+        // ----- draw wheel (all white segments, grey borders, text pointing center) -----
         function drawWheel(rotation) {
             const width = canvas.width;
             const height = canvas.height;
@@ -287,7 +266,7 @@
 
             const centerX = width / 2;
             const centerY = height / 2;
-            const radius = Math.min(width, height) * 0.42;  // leave space for button & text
+            const radius = Math.min(width, height) * 0.42;
             ctx.clearRect(0, 0, width, height);
 
             // Draw each segment
@@ -295,129 +274,128 @@
                 const startAngle = i * anglePerSegment + rotation;
                 const endAngle = startAngle + anglePerSegment;
 
-                // draw segment fill
+                // draw white segment
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
                 ctx.arc(centerX, centerY, radius, startAngle, endAngle);
                 ctx.closePath();
-                ctx.fillStyle = colorPalette[i % colorPalette.length];
+                ctx.fillStyle = segmentColor;
                 ctx.fill();
 
-                // draw white separator lines
-                ctx.strokeStyle = '#FFF8E7';
-                ctx.lineWidth = Math.max(1.8, width * 0.006);
+                // draw grey separator lines
+                ctx.strokeStyle = '#AAAAAA';
+                ctx.lineWidth = Math.max(1.2, width * 0.004);
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
                 ctx.arc(centerX, centerY, radius, startAngle, endAngle);
                 ctx.lineTo(centerX, centerY);
                 ctx.stroke();
 
-                // --- draw value text (pointing to centre) ---
+                // draw value text (pointing to centre)
                 ctx.save();
                 ctx.translate(centerX, centerY);
                 const midAngle = startAngle + anglePerSegment / 2;
-                // position text at 70% of radius so it's readable but not too close to edge
                 const textRadius = radius * 0.7;
                 const x = Math.cos(midAngle) * textRadius;
                 const y = Math.sin(midAngle) * textRadius;
 
                 ctx.translate(x, y);
-                // rotate text so it faces the centre (makes reading easy from all sides)
-                const rotationToCenter = midAngle + (midAngle > Math.PI/2 ? Math.PI : 0); // smooth orientation
-                ctx.rotate(rotationToCenter + (midAngle > Math.PI/2 ? 0 : Math.PI)); // text always points toward rim? Actually we want toward centre:
-                // Better: rotate so text baseline aims at center. let's do: rotate by midAngle + Math.PI/2 ? 
-                // simpler: rotate so that text is radial (head to centre)
-                // We want text baseline pointing inward: rotate by midAngle + Math.PI/2 (since text default orientation is horizontal)
-                // Test: at 12 o'clock (midAngle = -PI/2): add PI/2 gives 0 => horizontal but pointing right? let's manually make it always readable.
-                // easier: make text always upright? no, they asked "head to our center" meaning text orientation towards centre.
-                // So we rotate each text so that the bottom of the text points to centre.
-                ctx.rotate(midAngle + Math.PI/2);  // this aligns text radial inward. works fine.
+                // rotate text to face center
+                ctx.rotate(midAngle + Math.PI/2);
 
                 ctx.font = `bold ${Math.max(14, width * 0.035)}px 'Segoe UI', 'Arial', sans-serif`;
-                ctx.fillStyle = '#0a1a26';
-                ctx.shadowColor = '#ffffff';
-                ctx.shadowBlur = 3;
+                ctx.fillStyle = '#000000';  // black text on white
+                ctx.shadowColor = 'rgba(0,0,0,0.1)';
+                ctx.shadowBlur = 2;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                // for long numbers like 10000, we show as is
+                
+                // Show full text with taka
                 let displayText = values[i];
-                if (displayText === "10000") displayText = "10k";   // tiny fix for space, but keep original in data
-                else if (displayText === "1500") displayText = "1.5k";
-                // but we show taka sign? optional
-                ctx.fillText(displayText + "₸", 0, 0);
+                // shorten only extreme long ones but keep taka word
+                if (displayText === "10000 taka") displayText = "10k taka";
+                else if (displayText === "1500 taka") displayText = "1.5k taka";
+                
+                ctx.fillText(displayText, 0, 0);
                 ctx.restore();
             }
 
-            // draw center circle (to cover lines & make button area clean)
+            // draw center circle
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius * 0.2, 0, 2 * Math.PI);
-            ctx.fillStyle = '#1f3645';
-            ctx.shadowBlur = 15;
+            ctx.fillStyle = '#f1c40f';
+            ctx.shadowBlur = 10;
             ctx.shadowColor = '#000000';
             ctx.fill();
             ctx.shadowBlur = 0;
-            ctx.strokeStyle = '#f1c40f';
-            ctx.lineWidth = 5;
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 4;
             ctx.stroke();
-
-            // tiny inner shine
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius * 0.08, 0, 2 * Math.PI);
-            ctx.fillStyle = '#f1c40f';
-            ctx.fill();
         }
 
-        // ---- helper: get winning index based on rotation (pointer at 12 o'clock => angle = -PI/2) ----
+        // ---- get winning segment based on pointer at top (-PI/2) ----
         function getCurrentSegmentIndex(rotation) {
-            // pointer direction is upward: angle = -PI/2 (270 degrees)
-            const pointerAngle = -Math.PI / 2;  // straight up
-            // the segment whose arc covers this pointerAngle + rotation mod 2pi
+            const pointerAngle = -Math.PI / 2;
             let rawAngle = (pointerAngle - rotation + 2 * Math.PI) % (2 * Math.PI);
             let segment = Math.floor(rawAngle / anglePerSegment);
             return segment % segmentCount;
         }
 
-        // ---- spin logic! -----
+        // ---- smooth spin with ease-out ----
         function startSpin() {
             if (isSpinning) return;
 
-            // initial speed: random between 25 and 45 rad/s (very fast)
-            spinVelocity = 25 + Math.random() * 30;
             isSpinning = true;
             spinBtn.style.opacity = '0.8';
             spinBtn.style.pointerEvents = 'none';
+            
+            // starting rotation (keep current position)
+            const startRotation = currentRotation;
+            const startTime = performance.now();
+            
+            // target final rotation: current + full rotations + random offset to land on random segment
+            // we want random segment, so add random angle between 0 and 2PI
+            const randomLandingOffset = Math.random() * 2 * Math.PI;
+            // total rotation = full rotations * 2PI + random offset
+            const targetRotation = startRotation + (fullRotations * 2 * Math.PI) + randomLandingOffset;
 
-            function animateSpin() {
-                if (!isSpinning) return;
-
-                // apply friction
-                spinVelocity *= friction;
-                currentRotation = (currentRotation + spinVelocity) % (2 * Math.PI);
+            function animateSmooth(currentTime) {
+                const elapsed = currentTime - startTime;
+                let progress = Math.min(elapsed / spinDuration, 1); // 0 to 1
+                
+                // ease-out cubic: slow down gradually
+                // progress = 1 - (1-progress)^3 gives smooth stop
+                const easeOutProgress = 1 - Math.pow(1 - progress, 3);
+                
+                // interpolate rotation
+                currentRotation = startRotation + (targetRotation - startRotation) * easeOutProgress;
+                currentRotation = currentRotation % (2 * Math.PI);
+                
                 drawWheel(currentRotation);
 
-                // check stop condition
-                if (spinVelocity > minVelocity) {
-                    spinAnimation = requestAnimationFrame(animateSpin);
+                if (progress < 1) {
+                    spinAnimation = requestAnimationFrame(animateSmooth);
                 } else {
-                    // spin finished
+                    // spin complete
                     isSpinning = false;
                     spinBtn.style.opacity = '1';
                     spinBtn.style.pointerEvents = 'auto';
-                    cancelAnimationFrame(spinAnimation);
                     spinAnimation = null;
+                    
+                    // final adjustment to exact target
+                    currentRotation = targetRotation % (2 * Math.PI);
+                    drawWheel(currentRotation);
 
-                    // determine winner
+                    // get winner
                     const winnerIdx = getCurrentSegmentIndex(currentRotation);
-                    landedIndex = winnerIdx;
                     const winningValue = values[winnerIdx];
-
-                    // show popup with appropriate message
+                    
                     let message;
-                    if (winningValue === "0") {
+                    if (winningValue === "0 taka") {
                         message = "hehe bhuwaaa tmi salami paba naa 😂";
                         document.getElementById('popupMessage').className = 'zero-highlight';
                     } else {
-                        message = `🎊 ${winningValue} TAKA 🎊`;
+                        message = `🎊 ${winningValue} 🎊`;
                         document.getElementById('popupMessage').className = '';
                     }
                     popupMessage.innerText = message;
@@ -427,10 +405,8 @@
 
             // cancel any previous animation
             if (spinAnimation) cancelAnimationFrame(spinAnimation);
-            spinAnimation = requestAnimationFrame(animateSpin);
+            spinAnimation = requestAnimationFrame(animateSmooth);
         }
-
-        // ---- manual stop (optional but not needed, we let it decelerate) ----
 
         // ---- popup close ----
         closePopup.addEventListener('click', () => {
@@ -440,10 +416,8 @@
             if (e.target === popupOverlay) popupOverlay.style.display = 'none';
         });
 
-        // ---- SPIN button event ----
+        // ---- SPIN button ----
         spinBtn.addEventListener('click', startSpin);
-
-        // ---- also click on canvas can spin? but we keep only button ----
 
         // ---- window resize ----
         window.addEventListener('resize', () => {
@@ -453,12 +427,10 @@
         // initial draw
         setTimeout(() => {
             resizeCanvas();
-            // random start rotation so wheel looks different each load
-            currentRotation = Math.random() * 2 * Math.PI;
+            currentRotation = Math.random() * 2 * Math.PI; // random start
             drawWheel(currentRotation);
         }, 10);
 
-        // touch / drag prevention on canvas
         canvas.addEventListener('touchstart', (e) => e.preventDefault());
     })();
 </script>

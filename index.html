@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Takaaaa Spin Wheel · 6 sec slow slowdown</title>
+    <title>Takaaaa Spin Wheel · Perfect text fitting</title>
     <style>
         * {
             box-sizing: border-box;
@@ -228,8 +228,8 @@
         let currentRotation = 0;
         let spinAnimation = null;
         let isSpinning = false;
-        const spinDuration = 6000; // 6 seconds total
-        const fullRotations = 14;   // More rotations for longer spin
+        const spinDuration = 6000;
+        const fullRotations = 14;
 
         function resizeCanvas() {
             const w = wrapper.clientWidth;
@@ -248,9 +248,10 @@
             const centerY = height / 2;
             const radius = Math.min(width, height) * 0.42;
             
-            // Text boundaries
-            const textStartRadius = radius * 0.75;
-            const textEndRadius = radius * 0.3;
+            // Text boundaries - exactly where text should start and end
+            const textStartRadius = radius * 0.75; // Outer line (near rim)
+            const textEndRadius = radius * 0.3;     // Inner line (near center)
+            const textLaneWidth = textStartRadius - textEndRadius; // Available space for text
             
             ctx.clearRect(0, 0, width, height);
 
@@ -282,7 +283,7 @@
             ctx.lineWidth = Math.max(3, width * 0.008);
             ctx.stroke();
 
-            // Text boundary lines
+            // Text boundary lines (dashed)
             ctx.beginPath();
             ctx.arc(centerX, centerY, textStartRadius, 0, 2 * Math.PI);
             ctx.strokeStyle = '#666666';
@@ -297,7 +298,7 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Draw text
+            // Draw text - PERFECTLY FITTED
             for (let i = 0; i < segmentCount; i++) {
                 const startAngle = i * anglePerSegment + rotation;
                 
@@ -306,24 +307,39 @@
                 
                 const midAngle = startAngle + anglePerSegment / 2;
                 
+                // Position at the OUTER boundary (start of text)
                 const startX = Math.cos(midAngle) * textStartRadius;
                 const startY = Math.sin(midAngle) * textStartRadius;
                 
                 ctx.translate(startX, startY);
                 ctx.rotate(midAngle);
                 
-                ctx.textAlign = 'left';
-                ctx.textBaseline = 'middle';
-                
-                ctx.font = `bold ${Math.max(16, width * 0.04)}px 'Segoe UI', 'Arial', sans-serif`;
-                ctx.fillStyle = '#000000';
-                ctx.shadowColor = 'rgba(0,0,0,0.1)';
-                ctx.shadowBlur = 2;
-                
+                // Calculate dynamic font size based on text length
                 let displayText = values[i];
                 if (displayText === "10000 tk") displayText = "10k tk";
                 else if (displayText === "1500 tk") displayText = "1.5k tk";
                 
+                // Count characters to determine font size
+                const charCount = displayText.length;
+                // Base font size on wheel size and lane width, adjusted for text length
+                // For longer text, make font smaller so it fits
+                let fontSize = Math.min(
+                    textLaneWidth * 0.9, // Max size based on lane width
+                    (textLaneWidth / charCount) * 2.2 // Scale by character count
+                );
+                
+                // Cap font size to reasonable limits
+                fontSize = Math.min(Math.max(fontSize, width * 0.03), width * 0.07);
+                
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                
+                ctx.font = `bold ${fontSize}px 'Segoe UI', 'Arial', sans-serif`;
+                ctx.fillStyle = '#000000';
+                ctx.shadowColor = 'rgba(0,0,0,0.1)';
+                ctx.shadowBlur = 2;
+                
+                // Draw text - it will start at outer boundary and extend inward
                 ctx.fillText(displayText, 0, 0);
                 
                 ctx.restore();
@@ -365,7 +381,6 @@
             const startRotation = currentRotation;
             const startTime = performance.now();
             
-            // Random ending position (full rotations + random offset)
             const randomLandingOffset = Math.random() * 2 * Math.PI;
             const targetRotation = startRotation + (fullRotations * 2 * Math.PI) + randomLandingOffset;
 
@@ -373,13 +388,11 @@
                 const elapsed = currentTime - startTime;
                 let progress = Math.min(elapsed / spinDuration, 1);
                 
-                // EXPONENTIAL EASE-OUT: starts fast, ends very slow
-                // This creates that "slowly slowly stopping" feeling
+                // Exponential ease-out for super smooth stop
                 let easeOutProgress;
                 if (progress === 0) {
                     easeOutProgress = 0;
                 } else {
-                    // Exponential ease-out - extremely smooth deceleration
                     easeOutProgress = 1 - Math.pow(2, -10 * progress);
                 }
                 
@@ -391,11 +404,9 @@
                 if (progress < 1) {
                     spinAnimation = requestAnimationFrame(animateSmooth);
                 } else {
-                    // Ensure exact final position
                     currentRotation = targetRotation % (2 * Math.PI);
                     drawWheel(currentRotation);
                     
-                    // Small delay to show final position before popup
                     setTimeout(() => {
                         isSpinning = false;
                         spinBtn.style.opacity = '1';

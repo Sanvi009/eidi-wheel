@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Takaaaa Spin Wheel · Text from rim to center</title>
+    <title>Takaaaa Spin Wheel · Clean text inside rim</title>
     <style>
         * {
             box-sizing: border-box;
@@ -247,6 +247,11 @@
             const centerX = width / 2;
             const centerY = height / 2;
             const radius = Math.min(width, height) * 0.42;
+            
+            // Text boundaries
+            const textStartRadius = radius * 0.75; // Outer text boundary (near rim)
+            const textEndRadius = radius * 0.3;     // Inner text boundary (near center circle)
+            
             ctx.clearRect(0, 0, width, height);
 
             // Draw segments
@@ -262,7 +267,7 @@
                 ctx.fillStyle = segmentColor;
                 ctx.fill();
 
-                // Draw grey separator lines
+                // Draw grey separator lines (only from center to rim)
                 ctx.strokeStyle = '#AAAAAA';
                 ctx.lineWidth = Math.max(1.2, width * 0.004);
                 ctx.beginPath();
@@ -270,26 +275,51 @@
                 ctx.arc(centerX, centerY, radius, startAngle, endAngle);
                 ctx.lineTo(centerX, centerY);
                 ctx.stroke();
+            }
 
-                // ----- TEXT FROM RIM TO CENTER (like spokes) -----
+            // Draw outer rim circle (thick line)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = Math.max(3, width * 0.008);
+            ctx.stroke();
+
+            // Draw inner text boundary circle (clean line to contain text)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, textStartRadius, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#666666';
+            ctx.lineWidth = Math.max(1.5, width * 0.003);
+            ctx.setLineDash([5, 3]); // dashed line to show text boundary
+            ctx.stroke();
+            
+            // Draw inner circle boundary (where text stops)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, textEndRadius, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#666666';
+            ctx.lineWidth = Math.max(1.5, width * 0.003);
+            ctx.stroke();
+            ctx.setLineDash([]); // reset to solid
+
+            // Draw text for each segment (inside the boundaries)
+            for (let i = 0; i < segmentCount; i++) {
+                const startAngle = i * anglePerSegment + rotation;
+                const endAngle = startAngle + anglePerSegment;
+                
                 ctx.save();
                 ctx.translate(centerX, centerY);
                 
                 const midAngle = startAngle + anglePerSegment / 2;
                 
-                // Position text starting near the rim (80% of radius) and going inward
-                const startX = Math.cos(midAngle) * radius * 0.75;  // outer position
-                const startY = Math.sin(midAngle) * radius * 0.75;
+                // Position text starting at outer boundary and extending inward
+                const startX = Math.cos(midAngle) * textStartRadius;
+                const startY = Math.sin(midAngle) * textStartRadius;
                 
                 ctx.translate(startX, startY);
                 
                 // Rotate to align text along the radius pointing to center
-                // For text to flow from rim to center, we rotate by midAngle 
-                // This makes text direction point inward
                 ctx.rotate(midAngle);
                 
-                // For text to read from rim to center, we want the text to start at the rim
-                // and go toward center, so we use left alignment (start at rim)
+                // Text from outer boundary toward center
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
                 
@@ -303,8 +333,7 @@
                 if (displayText === "10000 taka") displayText = "10k taka";
                 else if (displayText === "1500 taka") displayText = "1.5k taka";
                 
-                // Draw text from current position (rim) going inward (negative X direction)
-                // Since we rotated to align with radius, negative X goes toward center
+                // Only draw if text fits (simple check - we'll just draw and let it overflow slightly)
                 ctx.fillText(displayText, 0, 0);
                 
                 ctx.restore();
@@ -320,6 +349,13 @@
             ctx.shadowBlur = 0;
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 4;
+            ctx.stroke();
+            
+            // Draw inner white ring to blend
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, textEndRadius - 2, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
             ctx.stroke();
         }
 

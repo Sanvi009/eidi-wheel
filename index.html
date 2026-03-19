@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Takaaaa Spin Wheel · Perfect text fitting</title>
+    <title>Takaaaa Spin Wheel · Simple & clean</title>
     <style>
         * {
             box-sizing: border-box;
@@ -207,6 +207,7 @@
 
 <script>
     (function() {
+        // Simple values with tk only
         const values = [
             "0 tk", "1 tk", "100 tk", "1000 tk", "20 tk", "50 tk", "2 tk", "10000 tk", "300 tk", "200 tk",
             "400 tk", "500 tk", "600 tk", "700 tk", "800 tk", "900 tk", "1500 tk", "30 tk", "40 tk", "10 tk",
@@ -248,10 +249,8 @@
             const centerY = height / 2;
             const radius = Math.min(width, height) * 0.42;
             
-            // Text boundaries - exactly where text should start and end
-            const textStartRadius = radius * 0.75; // Outer line (near rim)
-            const textEndRadius = radius * 0.3;     // Inner line (near center)
-            const textLaneWidth = textStartRadius - textEndRadius; // Available space for text
+            // Simple text position - middle of the lane
+            const textRadius = radius * 0.55; // Perfect middle between center and rim
             
             ctx.clearRect(0, 0, width, height);
 
@@ -283,22 +282,7 @@
             ctx.lineWidth = Math.max(3, width * 0.008);
             ctx.stroke();
 
-            // Text boundary lines (dashed)
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, textStartRadius, 0, 2 * Math.PI);
-            ctx.strokeStyle = '#666666';
-            ctx.lineWidth = Math.max(1.5, width * 0.003);
-            ctx.setLineDash([5, 3]);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, textEndRadius, 0, 2 * Math.PI);
-            ctx.strokeStyle = '#666666';
-            ctx.lineWidth = Math.max(1.5, width * 0.003);
-            ctx.stroke();
-            ctx.setLineDash([]);
-
-            // Draw text - PERFECTLY FITTED
+            // Draw text - simple and clean
             for (let i = 0; i < segmentCount; i++) {
                 const startAngle = i * anglePerSegment + rotation;
                 
@@ -307,39 +291,26 @@
                 
                 const midAngle = startAngle + anglePerSegment / 2;
                 
-                // Position at the OUTER boundary (start of text)
-                const startX = Math.cos(midAngle) * textStartRadius;
-                const startY = Math.sin(midAngle) * textStartRadius;
+                // Position text in the middle
+                const x = Math.cos(midAngle) * textRadius;
+                const y = Math.sin(midAngle) * textRadius;
                 
-                ctx.translate(startX, startY);
-                ctx.rotate(midAngle);
+                ctx.translate(x, y);
+                ctx.rotate(midAngle + Math.PI/2); // Make text readable
                 
-                // Calculate dynamic font size based on text length
-                let displayText = values[i];
-                if (displayText === "10000 tk") displayText = "10k tk";
-                else if (displayText === "1500 tk") displayText = "1.5k tk";
-                
-                // Count characters to determine font size
-                const charCount = displayText.length;
-                // Base font size on wheel size and lane width, adjusted for text length
-                // For longer text, make font smaller so it fits
-                let fontSize = Math.min(
-                    textLaneWidth * 0.9, // Max size based on lane width
-                    (textLaneWidth / charCount) * 2.2 // Scale by character count
-                );
-                
-                // Cap font size to reasonable limits
-                fontSize = Math.min(Math.max(fontSize, width * 0.03), width * 0.07);
-                
-                ctx.textAlign = 'left';
+                ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 
-                ctx.font = `bold ${fontSize}px 'Segoe UI', 'Arial', sans-serif`;
+                // Simple fixed font size
+                ctx.font = `bold ${Math.max(14, width * 0.035)}px 'Segoe UI', 'Arial', sans-serif`;
                 ctx.fillStyle = '#000000';
                 ctx.shadowColor = 'rgba(0,0,0,0.1)';
                 ctx.shadowBlur = 2;
                 
-                // Draw text - it will start at outer boundary and extend inward
+                let displayText = values[i];
+                if (displayText === "10000 tk") displayText = "10k tk";
+                else if (displayText === "1500 tk") displayText = "1.5k tk";
+                
                 ctx.fillText(displayText, 0, 0);
                 
                 ctx.restore();
@@ -355,13 +326,6 @@
             ctx.shadowBlur = 0;
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 4;
-            ctx.stroke();
-            
-            // Inner white ring
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, textEndRadius - 2, 0, 2 * Math.PI);
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.lineWidth = 2;
             ctx.stroke();
         }
 
@@ -388,13 +352,8 @@
                 const elapsed = currentTime - startTime;
                 let progress = Math.min(elapsed / spinDuration, 1);
                 
-                // Exponential ease-out for super smooth stop
-                let easeOutProgress;
-                if (progress === 0) {
-                    easeOutProgress = 0;
-                } else {
-                    easeOutProgress = 1 - Math.pow(2, -10 * progress);
-                }
+                // Simple ease-out for smooth stop
+                const easeOutProgress = 1 - Math.pow(1 - progress, 3);
                 
                 currentRotation = startRotation + (targetRotation - startRotation) * easeOutProgress;
                 currentRotation = currentRotation % (2 * Math.PI);

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Takaaaa Spin Wheel · Bhuri wala</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1a2f3f 0%, #11212e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            padding: 12px;
+            margin: 0;
+        }
+
+        .page-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            max-width: 620px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            border-radius: 50%;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.6), 0 0 0 8px #2e4b5c, 0 0 0 12px #f1c40f;
+            background: #2c3e50;
+            transition: box-shadow 0.2s;
+        }
+
+        canvas:active {
+            transform: scale(0.99);
+        }
+
+        .spin-button {
+            position: absolute;
+            width: 23%;
+            height: 23%;
+            background: #f1c40f;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            box-shadow: 0 6px 0 #b38d1c, 0 12px 25px rgba(0,0,0,0.5);
+            border: 4px solid white;
+            font-weight: 900;
+            font-size: clamp(1rem, 5vw, 1.9rem);
+            letter-spacing: 1px;
+            color: #1f2c38;
+            text-transform: uppercase;
+            transition: all 0.08s linear;
+            user-select: none;
+            cursor: pointer;
+            font-family: 'Segoe UI', 'Arial Black', sans-serif;
+            line-height: 1;
+        }
+
+        .spin-button:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #b38d1c, 0 8px 20px rgba(0,0,0,0.5);
+        }
+
+        /* static pointer decoration */
+        .pointer {
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 24px solid transparent;
+            border-right: 24px solid transparent;
+            border-top: 42px solid #e63946;
+            filter: drop-shadow(0 8px 6px rgba(0,0,0,0.4));
+            z-index: 25;
+            pointer-events: none;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: 0.2s;
+        }
+
+        .popup-card {
+            background: linear-gradient(145deg, #f5f1e7, #fde9d0);
+            max-width: 440px;
+            width: 85%;
+            padding: 2rem 1.8rem;
+            border-radius: 64px 24px 64px 24px;
+            text-align: center;
+            box-shadow: 0 35px 60px rgba(0,0,0,0.6), 0 0 0 6px #f1c40f, 0 0 0 12px #2e4b5c;
+            transform: scale(0.9);
+            transition: 0.2s;
+            border: 2px solid white;
+        }
+
+        .popup-card h2 {
+            font-size: 2.8rem;
+            font-weight: 900;
+            margin-bottom: 0.6rem;
+            color: #1e3b4a;
+            text-shadow: 3px 3px 0 #f1c40f;
+            letter-spacing: -0.5px;
+            word-break: break-word;
+        }
+
+        .popup-card p {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: #2e4b5c;
+            color: white;
+            padding: 1rem 0.8rem;
+            border-radius: 60px;
+            margin: 20px 0 25px;
+            border: 3px solid #f1c40f;
+            box-shadow: inset 0 -3px 0 #1d2f3a;
+        }
+
+        .popup-card button {
+            background: #e63946;
+            color: white;
+            font-weight: 800;
+            font-size: 1.9rem;
+            padding: 14px 40px;
+            border: none;
+            border-radius: 60px;
+            box-shadow: 0 8px 0 #921a27, 0 10px 25px black;
+            cursor: pointer;
+            transition: 0.06s linear;
+            letter-spacing: 2px;
+            border: 2px solid #ffb3ba;
+        }
+
+        .popup-card button:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #921a27, 0 5px 15px black;
+        }
+
+        .zero-highlight {
+            background: #c0392b !important;
+            color: #ffe48f !important;
+            font-size: 2rem !important;
+            text-transform: uppercase;
+        }
+
+        /* footer text */
+        .hint {
+            color: #bcd4de;
+            margin-top: 24px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            background: #1d3340;
+            padding: 10px 28px;
+            border-radius: 60px;
+            border: 2px solid #f1c40f80;
+            backdrop-filter: blur(5px);
+        }
+
+        /* responsive small adjustments */
+        @media (max-width: 500px) {
+            .popup-card h2 {
+                font-size: 2rem;
+            }
+            .popup-card p {
+                font-size: 1.5rem;
+            }
+            .pointer {
+                border-left-width: 16px;
+                border-right-width: 16px;
+                border-top-width: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page-wrapper">
+    <div class="wheel-container" id="wheelWrapper">
+        <canvas id="wheelCanvas" width="800" height="800"></canvas>
+        <div class="spin-button" id="spinBtn" role="button" tabindex="0">SPIN</div>
+        <div class="pointer"></div>
+    </div>
+    <div class="hint">⚡ dabao aur kismat khelay ⚡</div>
+</div>
+
+<!-- popup modal -->
+<div class="popup-overlay" id="popupOverlay">
+    <div class="popup-card" id="popupCard">
+        <h2>🎉 RESULT 🎉</h2>
+        <p id="popupMessage"></p>
+        <button id="closePopup">BALLE BALLE</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------------- wheel options (taka values) ----------------
+        const values = [
+            "0", "1", "100", "1000", "20", "50", "2", "10000", "300", "200",
+            "400", "500", "600", "700", "800", "900", "1500", "30", "40", "10",
+            "15", "5", "25", "35", "45", "47", "55", "65", "90"
+        ];  // total 29 segments
+
+        const segmentCount = values.length;
+        const anglePerSegment = (Math.PI * 2) / segmentCount;
+
+        // colors: vibrant alternating (decent contrast)
+        const colorPalette = [
+            '#f8c291', '#6a89cc', '#f6b93b', '#b8e994', '#fa983a', '#60a3bc', '#e55039', '#78e08f', '#f6b93b', '#82ccdd',
+            '#fad0c4', '#f8c291', '#b8e994', '#6a89cc', '#e55039', '#f6b93b', '#60a3bc', '#fa983a', '#78e08f', '#82ccdd',
+            '#fad0c4', '#f8c291', '#b8e994', '#6a89cc', '#e55039', '#f6b93b', '#fa983a', '#60a3bc', '#e55039'
+        ]; // enough colors even if more segments
+
+        // canvas references
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('wheelWrapper');
+        const spinBtn = document.getElementById('spinBtn');
+        const popupOverlay = document.getElementById('popupOverlay');
+        const popupMessage = document.getElementById('popupMessage');
+        const closePopup = document.getElementById('closePopup');
+
+        // ---- state ----
+        let currentRotation = 0;        // radians
+        let spinAnimation = null;
+        let isSpinning = false;
+        let spinVelocity = 0;
+        const friction = 0.985;          // smooth deceleration
+        const minVelocity = 0.02;         // stop threshold
+
+        // ---- winner segment index (landing) ----
+        let landedIndex = 0;
+
+        // ---- resize handling ----
+        function resizeCanvas() {
+            const container = wrapper;
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            canvas.width = w;
+            canvas.height = h;
+            drawWheel(currentRotation);
+        }
+
+        // ----- draw wheel (with text pointing to centre) -----
+        function drawWheel(rotation) {
+            const width = canvas.width;
+            const height = canvas.height;
+            if (width === 0 || height === 0) return;
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) * 0.42;  // leave space for button & text
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw each segment
+            for (let i = 0; i < segmentCount; i++) {
+                const startAngle = i * anglePerSegment + rotation;
+                const endAngle = startAngle + anglePerSegment;
+
+                // draw segment fill
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fillStyle = colorPalette[i % colorPalette.length];
+                ctx.fill();
+
+                // draw white separator lines
+                ctx.strokeStyle = '#FFF8E7';
+                ctx.lineWidth = Math.max(1.8, width * 0.006);
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.lineTo(centerX, centerY);
+                ctx.stroke();
+
+                // --- draw value text (pointing to centre) ---
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                const midAngle = startAngle + anglePerSegment / 2;
+                // position text at 70% of radius so it's readable but not too close to edge
+                const textRadius = radius * 0.7;
+                const x = Math.cos(midAngle) * textRadius;
+                const y = Math.sin(midAngle) * textRadius;
+
+                ctx.translate(x, y);
+                // rotate text so it faces the centre (makes reading easy from all sides)
+                const rotationToCenter = midAngle + (midAngle > Math.PI/2 ? Math.PI : 0); // smooth orientation
+                ctx.rotate(rotationToCenter + (midAngle > Math.PI/2 ? 0 : Math.PI)); // text always points toward rim? Actually we want toward centre:
+                // Better: rotate so text baseline aims at center. let's do: rotate by midAngle + Math.PI/2 ? 
+                // simpler: rotate so that text is radial (head to centre)
+                // We want text baseline pointing inward: rotate by midAngle + Math.PI/2 (since text default orientation is horizontal)
+                // Test: at 12 o'clock (midAngle = -PI/2): add PI/2 gives 0 => horizontal but pointing right? let's manually make it always readable.
+                // easier: make text always upright? no, they asked "head to our center" meaning text orientation towards centre.
+                // So we rotate each text so that the bottom of the text points to centre.
+                ctx.rotate(midAngle + Math.PI/2);  // this aligns text radial inward. works fine.
+
+                ctx.font = `bold ${Math.max(14, width * 0.035)}px 'Segoe UI', 'Arial', sans-serif`;
+                ctx.fillStyle = '#0a1a26';
+                ctx.shadowColor = '#ffffff';
+                ctx.shadowBlur = 3;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                // for long numbers like 10000, we show as is
+                let displayText = values[i];
+                if (displayText === "10000") displayText = "10k";   // tiny fix for space, but keep original in data
+                else if (displayText === "1500") displayText = "1.5k";
+                // but we show taka sign? optional
+                ctx.fillText(displayText + "₸", 0, 0);
+                ctx.restore();
+            }
+
+            // draw center circle (to cover lines & make button area clean)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 0.2, 0, 2 * Math.PI);
+            ctx.fillStyle = '#1f3645';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#000000';
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#f1c40f';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+
+            // tiny inner shine
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 0.08, 0, 2 * Math.PI);
+            ctx.fillStyle = '#f1c40f';
+            ctx.fill();
+        }
+
+        // ---- helper: get winning index based on rotation (pointer at 12 o'clock => angle = -PI/2) ----
+        function getCurrentSegmentIndex(rotation) {
+            // pointer direction is upward: angle = -PI/2 (270 degrees)
+            const pointerAngle = -Math.PI / 2;  // straight up
+            // the segment whose arc covers this pointerAngle + rotation mod 2pi
+            let rawAngle = (pointerAngle - rotation + 2 * Math.PI) % (2 * Math.PI);
+            let segment = Math.floor(rawAngle / anglePerSegment);
+            return segment % segmentCount;
+        }
+
+        // ---- spin logic! -----
+        function startSpin() {
+            if (isSpinning) return;
+
+            // initial speed: random between 25 and 45 rad/s (very fast)
+            spinVelocity = 25 + Math.random() * 30;
+            isSpinning = true;
+            spinBtn.style.opacity = '0.8';
+            spinBtn.style.pointerEvents = 'none';
+
+            function animateSpin() {
+                if (!isSpinning) return;
+
+                // apply friction
+                spinVelocity *= friction;
+                currentRotation = (currentRotation + spinVelocity) % (2 * Math.PI);
+                drawWheel(currentRotation);
+
+                // check stop condition
+                if (spinVelocity > minVelocity) {
+                    spinAnimation = requestAnimationFrame(animateSpin);
+                } else {
+                    // spin finished
+                    isSpinning = false;
+                    spinBtn.style.opacity = '1';
+                    spinBtn.style.pointerEvents = 'auto';
+                    cancelAnimationFrame(spinAnimation);
+                    spinAnimation = null;
+
+                    // determine winner
+                    const winnerIdx = getCurrentSegmentIndex(currentRotation);
+                    landedIndex = winnerIdx;
+                    const winningValue = values[winnerIdx];
+
+                    // show popup with appropriate message
+                    let message;
+                    if (winningValue === "0") {
+                        message = "hehe bhuwaaa tmi salami paba naa 😂";
+                        document.getElementById('popupMessage').className = 'zero-highlight';
+                    } else {
+                        message = `🎊 ${winningValue} TAKA 🎊`;
+                        document.getElementById('popupMessage').className = '';
+                    }
+                    popupMessage.innerText = message;
+                    popupOverlay.style.display = 'flex';
+                }
+            }
+
+            // cancel any previous animation
+            if (spinAnimation) cancelAnimationFrame(spinAnimation);
+            spinAnimation = requestAnimationFrame(animateSpin);
+        }
+
+        // ---- manual stop (optional but not needed, we let it decelerate) ----
+
+        // ---- popup close ----
+        closePopup.addEventListener('click', () => {
+            popupOverlay.style.display = 'none';
+        });
+        popupOverlay.addEventListener('click', (e) => {
+            if (e.target === popupOverlay) popupOverlay.style.display = 'none';
+        });
+
+        // ---- SPIN button event ----
+        spinBtn.addEventListener('click', startSpin);
+
+        // ---- also click on canvas can spin? but we keep only button ----
+
+        // ---- window resize ----
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+
+        // initial draw
+        setTimeout(() => {
+            resizeCanvas();
+            // random start rotation so wheel looks different each load
+            currentRotation = Math.random() * 2 * Math.PI;
+            drawWheel(currentRotation);
+        }, 10);
+
+        // touch / drag prevention on canvas
+        canvas.addEventListener('touchstart', (e) => e.preventDefault());
+    })();
+</script>
+</body>
+</html>

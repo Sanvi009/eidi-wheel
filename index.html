@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Takaaaa Spin Wheel · Clean text inside rim</title>
+    <title>Takaaaa Spin Wheel · 6 sec slow slowdown</title>
     <style>
         * {
             box-sizing: border-box;
@@ -194,7 +194,7 @@
         <div class="spin-button" id="spinBtn" tabindex="0">SPIN</div>
         <div class="pointer"></div>
     </div>
-    <div class="hint">⚡ ghurai dekho kismat ⚡</div>
+    <div class="hint">⚡ 6 second tak slow spin ⚡</div>
 </div>
 
 <div class="popup-overlay" id="popupOverlay">
@@ -228,8 +228,8 @@
         let currentRotation = 0;
         let spinAnimation = null;
         let isSpinning = false;
-        const spinDuration = 4000;
-        const fullRotations = 12;
+        const spinDuration = 6000; // 6 seconds total
+        const fullRotations = 14;   // More rotations for longer spin
 
         function resizeCanvas() {
             const w = wrapper.clientWidth;
@@ -249,8 +249,8 @@
             const radius = Math.min(width, height) * 0.42;
             
             // Text boundaries
-            const textStartRadius = radius * 0.75; // Outer text boundary (near rim)
-            const textEndRadius = radius * 0.3;     // Inner text boundary (near center circle)
+            const textStartRadius = radius * 0.75;
+            const textEndRadius = radius * 0.3;
             
             ctx.clearRect(0, 0, width, height);
 
@@ -259,7 +259,6 @@
                 const startAngle = i * anglePerSegment + rotation;
                 const endAngle = startAngle + anglePerSegment;
 
-                // Draw white segment
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
                 ctx.arc(centerX, centerY, radius, startAngle, endAngle);
@@ -267,7 +266,6 @@
                 ctx.fillStyle = segmentColor;
                 ctx.fill();
 
-                // Draw grey separator lines (only from center to rim)
                 ctx.strokeStyle = '#AAAAAA';
                 ctx.lineWidth = Math.max(1.2, width * 0.004);
                 ctx.beginPath();
@@ -277,49 +275,43 @@
                 ctx.stroke();
             }
 
-            // Draw outer rim circle (thick line)
+            // Outer rim
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
             ctx.strokeStyle = '#333333';
             ctx.lineWidth = Math.max(3, width * 0.008);
             ctx.stroke();
 
-            // Draw inner text boundary circle (clean line to contain text)
+            // Text boundary lines
             ctx.beginPath();
             ctx.arc(centerX, centerY, textStartRadius, 0, 2 * Math.PI);
             ctx.strokeStyle = '#666666';
             ctx.lineWidth = Math.max(1.5, width * 0.003);
-            ctx.setLineDash([5, 3]); // dashed line to show text boundary
+            ctx.setLineDash([5, 3]);
             ctx.stroke();
             
-            // Draw inner circle boundary (where text stops)
             ctx.beginPath();
             ctx.arc(centerX, centerY, textEndRadius, 0, 2 * Math.PI);
             ctx.strokeStyle = '#666666';
             ctx.lineWidth = Math.max(1.5, width * 0.003);
             ctx.stroke();
-            ctx.setLineDash([]); // reset to solid
+            ctx.setLineDash([]);
 
-            // Draw text for each segment (inside the boundaries)
+            // Draw text
             for (let i = 0; i < segmentCount; i++) {
                 const startAngle = i * anglePerSegment + rotation;
-                const endAngle = startAngle + anglePerSegment;
                 
                 ctx.save();
                 ctx.translate(centerX, centerY);
                 
                 const midAngle = startAngle + anglePerSegment / 2;
                 
-                // Position text starting at outer boundary and extending inward
                 const startX = Math.cos(midAngle) * textStartRadius;
                 const startY = Math.sin(midAngle) * textStartRadius;
                 
                 ctx.translate(startX, startY);
-                
-                // Rotate to align text along the radius pointing to center
                 ctx.rotate(midAngle);
                 
-                // Text from outer boundary toward center
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
                 
@@ -328,18 +320,16 @@
                 ctx.shadowColor = 'rgba(0,0,0,0.1)';
                 ctx.shadowBlur = 2;
                 
-                // Format long numbers
                 let displayText = values[i];
                 if (displayText === "10000 taka") displayText = "10k taka";
                 else if (displayText === "1500 taka") displayText = "1.5k taka";
                 
-                // Only draw if text fits (simple check - we'll just draw and let it overflow slightly)
                 ctx.fillText(displayText, 0, 0);
                 
                 ctx.restore();
             }
 
-            // Draw center circle (spin button area)
+            // Center circle
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius * 0.2, 0, 2 * Math.PI);
             ctx.fillStyle = '#f1c40f';
@@ -351,7 +341,7 @@
             ctx.lineWidth = 4;
             ctx.stroke();
             
-            // Draw inner white ring to blend
+            // Inner white ring
             ctx.beginPath();
             ctx.arc(centerX, centerY, textEndRadius - 2, 0, 2 * Math.PI);
             ctx.strokeStyle = '#FFFFFF';
@@ -374,14 +364,30 @@
             
             const startRotation = currentRotation;
             const startTime = performance.now();
+            
+            // Random ending position (full rotations + random offset)
             const randomLandingOffset = Math.random() * 2 * Math.PI;
             const targetRotation = startRotation + (fullRotations * 2 * Math.PI) + randomLandingOffset;
 
             function animateSmooth(currentTime) {
                 const elapsed = currentTime - startTime;
                 let progress = Math.min(elapsed / spinDuration, 1);
-                const easeOutProgress = 1 - Math.pow(1 - progress, 3);
                 
+                // EXPONENTIAL EASE-OUT: starts fast, ends very slow
+                // This creates that "slowly slowly stopping" feeling
+                // Using easeOutExpo: progress == 0? 0 : 1 - pow(2, -10 * progress)
+                let easeOutProgress;
+                if (progress === 0) {
+                    easeOutProgress = 0;
+                } else {
+                    // Exponential ease-out - extremely smooth deceleration
+                    easeOutProgress = 1 - Math.pow(2, -10 * progress);
+                }
+                
+                // Alternative even smoother: easeOutQuart
+                // easeOutProgress = 1 - Math.pow(1 - progress, 4);
+                
+                // Using exponential for that perfect "slowly slowly" feel
                 currentRotation = startRotation + (targetRotation - startRotation) * easeOutProgress;
                 currentRotation = currentRotation % (2 * Math.PI);
                 
@@ -390,27 +396,32 @@
                 if (progress < 1) {
                     spinAnimation = requestAnimationFrame(animateSmooth);
                 } else {
-                    isSpinning = false;
-                    spinBtn.style.opacity = '1';
-                    spinBtn.style.pointerEvents = 'auto';
-                    spinAnimation = null;
-                    
+                    // Ensure exact final position
                     currentRotation = targetRotation % (2 * Math.PI);
                     drawWheel(currentRotation);
-
-                    const winnerIdx = getCurrentSegmentIndex(currentRotation);
-                    const winningValue = values[winnerIdx];
                     
-                    let message;
-                    if (winningValue === "0 taka") {
-                        message = "hehe bhuwaaa tmi salami paba naa 😂";
-                        popupMessage.className = 'zero-highlight';
-                    } else {
-                        message = `🎊 ${winningValue} 🎊`;
-                        popupMessage.className = '';
-                    }
-                    popupMessage.innerText = message;
-                    popupOverlay.style.display = 'flex';
+                    // Small delay to show final position before popup
+                    setTimeout(() => {
+                        isSpinning = false;
+                        spinBtn.style.opacity = '1';
+                        spinBtn.style.pointerEvents = 'auto';
+                        
+                        const winnerIdx = getCurrentSegmentIndex(currentRotation);
+                        const winningValue = values[winnerIdx];
+                        
+                        let message;
+                        if (winningValue === "0 taka") {
+                            message = "hehe bhuwaaa tmi salami paba naa 😂";
+                            popupMessage.className = 'zero-highlight';
+                        } else {
+                            message = `🎊 ${winningValue} 🎊`;
+                            popupMessage.className = '';
+                        }
+                        popupMessage.innerText = message;
+                        popupOverlay.style.display = 'flex';
+                        
+                        spinAnimation = null;
+                    }, 50);
                 }
             }
 
